@@ -51,14 +51,14 @@ func (t *Time) Equal(other Time) bool {
 // with an auto-incrementable integer key in the datastore
 type AutoIncr struct {
 	ID        int64 `json:"id"`
-	CreatedAt Time  `json:"created_at"`
+	CreatedAt Time  `json:"createdAt"`
 }
 
 // Mutable indicates a type is mutable, giving it a
 // `UpdatedAt` field
 type Mutable struct {
 	AutoIncr
-	UpdatedAt Time `json:"updated_at"`
+	UpdatedAt Time `json:"updatedAt"`
 }
 
 // User is the data model for a MeIRL user
@@ -68,11 +68,11 @@ type User struct {
 	Email    string `json:"email"`
 	Password string `json:"password,omitempty"`
 
-	ActualName string `json:"actual_name"`
+	ActualName string `json:"actualName"`
 	DOB        Time   `json:"dob"`
 
-	NumFollowing int `json:"num_following"`
-	NumFollowers int `json:"num_followers"`
+	NumFollowing int `json:"numFollowing"`
+	NumFollowers int `json:"numFollowers"`
 }
 
 // Post is the data model for a MeIRL post
