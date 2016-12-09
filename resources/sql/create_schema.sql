@@ -38,6 +38,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.followers TO api;
 CREATE TABLE IF NOT EXISTS public.posts (
     id          serial PRIMARY KEY,
     created_at  timestamp with time zone NOT NULL DEFAULT now(),
+    updated_at  timestamp with time zone NOT NULL DEFAULT now(),
     author_id   integer NOT NULL,
     contents    text NOT NULL,
     FOREIGN KEY (author_id) REFERENCES users (id)

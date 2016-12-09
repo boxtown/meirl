@@ -77,7 +77,7 @@ type User struct {
 
 // Post is the data model for a MeIRL post
 type Post struct {
-	AutoIncr
+	Mutable
 	AuthorID int64
 	Contents []byte
 	Keks     int

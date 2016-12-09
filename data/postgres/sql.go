@@ -71,7 +71,7 @@ const (
 		  INNER JOIN followers ON followers.followee_id=users.id
 		  WHERE followers.follower_id=$1 OR users.id=$1`
 
-	updatePostSQL = `UPDATE posts SET contents=$1 WHERE id=$2`
+	updatePostSQL = `UPDATE posts SET contents=$1, updated_at=now() WHERE id=$2`
 
 	deletePostSQL = `DELETE FROM posts WHERE id=$1`
 )
