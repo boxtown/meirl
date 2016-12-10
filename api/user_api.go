@@ -7,7 +7,10 @@ import (
 
 	"regexp"
 
+	"strconv"
+
 	"github.com/boxtown/meirl/data"
+	jwt "github.com/dgrijalva/jwt-go"
 )
 
 // UserAPI contains state information for executing
@@ -80,6 +83,26 @@ func (api UserAPI) GetUser() http.HandlerFunc {
 		}
 		user.Password = ""
 		writeJSON(user, w)
+	}
+}
+
+// GetMe returns an http handler that redirects to `root`
+// with the appropriate user ID appended from the JWT.
+// `root` must be a valid path ending in '/'
+func (api UserAPI) GetMe(root string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims, ok := r.Context().Value(claimsContextKey).(jwt.MapClaims)
+		if !ok {
+			writeError(errBadContext, w, api.debug)
+			return
+		}
+		userID, ok := claims["sub"].(int64)
+		if !ok {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		w.Header().Add("Location", root+strconv.FormatInt(userID, 10))
+		w.WriteHeader(http.StatusSeeOther)
 	}
 }
 
