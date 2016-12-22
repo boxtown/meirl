@@ -21,15 +21,6 @@ func userToJSON(user *data.User) (io.Reader, error) {
 	return &buf, nil
 }
 
-func followRequestToJSON(req *FollowUserRequest) (io.Reader, error) {
-	var buf bytes.Buffer
-	err := json.NewEncoder(&buf).Encode(req)
-	if err != nil {
-		return nil, err
-	}
-	return &buf, nil
-}
-
 func postToJSON(post *data.Post) (io.Reader, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(post)

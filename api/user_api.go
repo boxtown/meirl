@@ -7,10 +7,7 @@ import (
 
 	"regexp"
 
-	"strconv"
-
 	"github.com/boxtown/meirl/data"
-	jwt "github.com/dgrijalva/jwt-go"
 )
 
 // UserAPI contains state information for executing
@@ -68,11 +65,7 @@ func (api UserAPI) CreateUser() http.HandlerFunc {
 // requests
 func (api UserAPI) GetUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, ok := r.Context().Value(idContextKey).(int64)
-		if !ok {
-			writeError(errBadContext, w, api.debug)
-			return
-		}
+		id := contextID(r)
 		user, err := api.stores.UserStore.Get(id)
 		if err == data.ErrNoEnt {
 			w.WriteHeader(http.StatusNotFound)
@@ -90,12 +83,7 @@ func (api UserAPI) GetUser() http.HandlerFunc {
 // to retrieve user information
 func (api UserAPI) GetMe(root string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		claims, ok := r.Context().Value(claimsContextKey).(jwt.MapClaims)
-		if !ok {
-			writeError(errBadContext, w, api.debug)
-			return
-		}
-		id, ok := claims["sub"].(int64)
+		id, ok := claimsID(r)
 		if !ok {
 			w.WriteHeader(http.StatusBadRequest)
 			return
@@ -117,11 +105,7 @@ func (api UserAPI) GetMe(root string) http.HandlerFunc {
 // API requests
 func (api UserAPI) GetFeed() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, ok := r.Context().Value(idContextKey).(int64)
-		if !ok {
-			writeError(errBadContext, w, api.debug)
-			return
-		}
+		id := contextID(r)
 		_, err := api.stores.UserStore.Get(id)
 		if err == data.ErrNoEnt {
 			w.WriteHeader(http.StatusNotFound)
@@ -144,29 +128,29 @@ func (api UserAPI) GetFeed() http.HandlerFunc {
 // API requests
 func (api UserAPI) FollowUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req FollowUserRequest
-		err := json.NewDecoder(r.Body).Decode(&req)
-		if err != nil {
-			writeError(err, w, api.debug)
+		id, ok := claimsID(r)
+		if !ok {
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		followeeID := contextID(r)
 		errc := make(chan error, 2)
 		go func() {
-			_, err := api.stores.UserStore.Get(req.FollowerID)
+			_, err := api.stores.UserStore.Get(id)
 			errc <- err
 		}()
 		go func() {
-			_, err := api.stores.UserStore.Get(req.FolloweeID)
+			_, err := api.stores.UserStore.Get(followeeID)
 			errc <- err
 		}()
 		for i := 0; i < 2; i++ {
-			err = <-errc
+			err := <-errc
 			if err == data.ErrNoEnt {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
 		}
-		err = api.stores.Follow(req.FollowerID, req.FolloweeID)
+		err := api.stores.Follow(id, followeeID)
 		if err != nil {
 			writeError(err, w, api.debug)
 			return
@@ -175,15 +159,19 @@ func (api UserAPI) FollowUser() http.HandlerFunc {
 	}
 }
 
+// UnFollowUser returns an http handler that handles unfollowing user
+// API requests
+func (api UserAPI) UnFollowUser() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// TODO
+	}
+}
+
 // DeleteUser returns an http handler that handles delete user API
 // requests
 func (api UserAPI) DeleteUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, ok := r.Context().Value(idContextKey).(int64)
-		if !ok {
-			writeError(errBadContext, w, api.debug)
-			return
-		}
+		id := contextID(r)
 		err := api.stores.UserStore.Delete(id)
 		if err != nil {
 			writeError(err, w, api.debug)

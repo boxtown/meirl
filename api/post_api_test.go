@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"strconv"
 	"strings"
 	"testing"
@@ -9,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
+	"github.com/boxtown/meirl/api/apitest"
 	"github.com/boxtown/meirl/data"
 	"github.com/boxtown/meirl/data/datatest"
 	jwt "github.com/dgrijalva/jwt-go"
@@ -28,9 +28,9 @@ func TestCreatePost(t *testing.T) {
 
 	json, _ := postToJSON(datatest.ExamplePost(1))
 	r, _ := http.NewRequest("", "", json)
-	r = r.WithContext(context.WithValue(r.Context(), claimsContextKey, jwt.MapClaims{
+	r = apitest.RequestWithClaims(r, claimsContextKey, jwt.MapClaims{
 		"sub": int64(1),
-	}))
+	})
 	w := httptest.NewRecorder()
 	api.CreatePost()(w, r)
 
@@ -64,7 +64,7 @@ func TestGetPost(t *testing.T) {
 	)
 
 	r, _ := http.NewRequest("", "", nil)
-	r = r.WithContext(context.WithValue(r.Context(), idContextKey, int64(1)))
+	r = apitest.RequestWithContextID(r, idContextKey, 1)
 	w := httptest.NewRecorder()
 	api.GetPost()(w, r)
 

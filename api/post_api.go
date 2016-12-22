@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 
 	"github.com/boxtown/meirl/data"
-	jwt "github.com/dgrijalva/jwt-go"
 )
 
 // PostAPI contains state information for executing
@@ -29,12 +28,7 @@ func NewPostAPI(stores data.Stores, debug bool) PostAPI {
 // requests
 func (api PostAPI) CreatePost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		claims, ok := r.Context().Value(claimsContextKey).(jwt.MapClaims)
-		if !ok {
-			writeError(errBadContext, w, api.debug)
-			return
-		}
-		userID, ok := claims["sub"].(int64)
+		userID, ok := claimsID(r)
 		if !ok {
 			w.WriteHeader(http.StatusBadRequest)
 			return
@@ -62,11 +56,7 @@ func (api PostAPI) CreatePost() http.HandlerFunc {
 // requests
 func (api PostAPI) GetPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, ok := r.Context().Value(idContextKey).(int64)
-		if !ok {
-			writeError(errBadContext, w, api.debug)
-			return
-		}
+		id, _ := r.Context().Value(idContextKey).(int64)
 		post, err := api.stores.PostStore.Get(id)
 		if err == data.ErrNoEnt {
 			w.WriteHeader(http.StatusNotFound)

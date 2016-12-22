@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -134,6 +133,10 @@ func GetClaimsMiddleware(signingKey []byte, next http.HandlerFunc) http.HandlerF
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		if _, ok := token.Claims.(jwt.MapClaims); !ok {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 		r = r.WithContext(context.WithValue(r.Context(), claimsContextKey, token.Claims))
 		next(w, r)
 	}
@@ -146,13 +149,32 @@ const (
 	claimsContextKey
 )
 
-var errBadContext = errors.New("Could not retrieve value from context")
+// Retrieve an ID from the context. Will panic if there was
+// no ID stored using idContextKey or if the stored ID is not
+// an int64
+func contextID(r *http.Request) int64 {
+	return r.Context().Value(idContextKey).(int64)
+}
 
+// Retrieve the user ID stored within the claims within an http
+// context. Will panic if there are no claims stored within the context.
+// Returns false if there is no ID witin the claims or if the ID is not
+// an int64
+func claimsID(r *http.Request) (int64, bool) {
+	claims := r.Context().Value(claimsContextKey).(jwt.MapClaims)
+	id, ok := claims["sub"].(int64)
+	return id, ok
+}
+
+// Attempt to write the body as JSON to the response writer.
+// If WriteHeader has not been called, a 200 status will be auto-sent
 func writeJSON(body interface{}, w http.ResponseWriter) {
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(body)
 }
 
+// Write a 503 error response to the response writer. If debug is true,
+// will write the error message as well
 func writeError(err error, w http.ResponseWriter, debug bool) {
 	w.WriteHeader(http.StatusServiceUnavailable)
 	if debug {

@@ -2,8 +2,6 @@ package api
 
 import (
 	"bytes"
-	"context"
-	"io"
 	"strconv"
 	"testing"
 
@@ -13,8 +11,10 @@ import (
 
 	"strings"
 
+	"github.com/boxtown/meirl/api/apitest"
 	"github.com/boxtown/meirl/data"
 	"github.com/boxtown/meirl/data/datatest"
+	jwt "github.com/dgrijalva/jwt-go"
 )
 
 func TestCreateUser(t *testing.T) {
@@ -165,7 +165,8 @@ func TestGetUser(t *testing.T) {
 		false,
 	)
 
-	r := requestWithContextID("", "", nil, int64(1))
+	r, _ := http.NewRequest("", "", nil)
+	r = apitest.RequestWithContextID(r, idContextKey, int64(1))
 	w := httptest.NewRecorder()
 	api.GetUser()(w, r)
 
@@ -207,7 +208,8 @@ func TestGetFeed(t *testing.T) {
 		nil,
 		false,
 	)
-	r := requestWithContextID("", "", nil, int64(1))
+	r, _ := http.NewRequest("", "", nil)
+	r = apitest.RequestWithContextID(r, idContextKey, int64(1))
 	w := httptest.NewRecorder()
 	api.GetFeed()(w, r)
 
@@ -242,9 +244,11 @@ func TestFollowerUser(t *testing.T) {
 		false,
 	)
 
-	req := &FollowUserRequest{FollowerID: 1, FolloweeID: 2}
-	json, _ := followRequestToJSON(req)
-	r, _ := http.NewRequest("", "", json)
+	r, _ := http.NewRequest("", "", nil)
+	r = apitest.RequestWithContextID(r, idContextKey, int64(1))
+	r = apitest.RequestWithClaims(r, claimsContextKey, jwt.MapClaims{
+		"sub": int64(1),
+	})
 	w := httptest.NewRecorder()
 	api.FollowUser()(w, r)
 
@@ -267,7 +271,8 @@ func TestDeleteUser(t *testing.T) {
 		false,
 	)
 
-	r := requestWithContextID("", "", nil, int64(1))
+	r, _ := http.NewRequest("", "", nil)
+	r = apitest.RequestWithContextID(r, idContextKey, int64(1))
 	w := httptest.NewRecorder()
 	api.DeleteUser()(w, r)
 
@@ -315,9 +320,4 @@ func TestLoginUser(t *testing.T) {
 		t.Error("Wrong token returned")
 		t.Fail()
 	}
-}
-
-func requestWithContextID(method, url string, body io.Reader, id int64) *http.Request {
-	r, _ := http.NewRequest(method, url, body)
-	return r.WithContext(context.WithValue(r.Context(), idContextKey, id))
 }
