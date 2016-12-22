@@ -86,9 +86,8 @@ func (api UserAPI) GetUser() http.HandlerFunc {
 	}
 }
 
-// GetMe returns an http handler that redirects to `root`
-// with the appropriate user ID appended from the JWT.
-// `root` must be a valid path ending in '/'
+// GetMe returns an http handler that uses JWT claims information
+// to retrieve user information
 func (api UserAPI) GetMe(root string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := r.Context().Value(claimsContextKey).(jwt.MapClaims)
@@ -96,13 +95,21 @@ func (api UserAPI) GetMe(root string) http.HandlerFunc {
 			writeError(errBadContext, w, api.debug)
 			return
 		}
-		userID, ok := claims["sub"].(int64)
+		id, ok := claims["sub"].(int64)
 		if !ok {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		w.Header().Add("Location", root+strconv.FormatInt(userID, 10))
-		w.WriteHeader(http.StatusSeeOther)
+		user, err := api.stores.UserStore.Get(id)
+		if err == data.ErrNoEnt {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		} else if err != nil {
+			writeError(err, w, api.debug)
+			return
+		}
+		user.Password = ""
+		writeJSON(user, w)
 	}
 }
 

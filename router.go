@@ -24,7 +24,7 @@ func initUserRoutes(r *mux.Router, stores data.Stores) {
 		api.GetIDMiddleware(userAPI.GetUser())).Methods("GET")
 	r.HandleFunc(
 		api.PrefixAPIPath("user/me"),
-		api.GetClaimsMiddleware(signingKey, userAPI.GetMe("/user/"))).Methods("GET")
+		api.GetClaimsMiddleware(signingKey, userAPI.GetMe())).Methods("GET")
 	r.HandleFunc(
 		api.PrefixAPIPath("user/{id:[0-9]+}/feed"),
 		api.GetIDMiddleware(userAPI.GetFeed())).Methods("GET")
