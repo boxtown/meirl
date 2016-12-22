@@ -185,6 +185,41 @@ func TestGetUser(t *testing.T) {
 	}
 }
 
+func TestGetMe(t *testing.T) {
+	stored := datatest.ExampleUser()
+	api := NewUserAPI(
+		data.Stores{
+			UserStore: mockUserStore{
+				OnGet: func(id int64) (*data.User, error) {
+					return stored, nil
+				},
+			},
+		},
+		nil,
+		false,
+	)
+	r, _ := http.NewRequest("", "", nil)
+	r = apitest.RequestWithClaims(r, claimsContextKey, jwt.MapClaims{
+		"sub": int64(1),
+	})
+	w := httptest.NewRecorder()
+	api.GetMe()(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status code %d, received %d", http.StatusOK, w.Code)
+		t.Fail()
+	}
+	user, err := userFromJSON(w.Body)
+	if err != nil {
+		t.Error(err.Error())
+		t.Fail()
+	}
+	if !datatest.UsersEqual(user, stored) {
+		t.Error("Retrieved user did not equal stored user")
+		t.Fail()
+	}
+}
+
 func TestGetFeed(t *testing.T) {
 	api := NewUserAPI(
 		data.Stores{
