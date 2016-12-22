@@ -81,7 +81,7 @@ func (api UserAPI) GetUser() http.HandlerFunc {
 
 // GetMe returns an http handler that uses JWT claims information
 // to retrieve user information
-func (api UserAPI) GetMe(root string) http.HandlerFunc {
+func (api UserAPI) GetMe() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, ok := claimsID(r)
 		if !ok {

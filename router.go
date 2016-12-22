@@ -21,30 +21,49 @@ func initUserRoutes(r *mux.Router, stores data.Stores) {
 	userAPI := api.NewUserAPI(stores, api.NewAuth(), debug())
 	r.HandleFunc(
 		api.PrefixAPIPath("user/{id:[0-9]+}"),
-		api.GetIDMiddleware(userAPI.GetUser())).Methods("GET")
+		api.GetIDMiddleware(userAPI.GetUser()),
+	).Methods("GET")
+
 	r.HandleFunc(
 		api.PrefixAPIPath("user/me"),
-		api.GetClaimsMiddleware(signingKey, userAPI.GetMe())).Methods("GET")
+		api.GetClaimsMiddleware(signingKey, userAPI.GetMe()),
+	).Methods("GET")
+
 	r.HandleFunc(
 		api.PrefixAPIPath("user/{id:[0-9]+}/feed"),
-		api.GetIDMiddleware(userAPI.GetFeed())).Methods("GET")
+		api.GetIDMiddleware(userAPI.GetFeed()),
+	).Methods("GET")
+
 	r.HandleFunc(
 		api.PrefixAPIPath("user/new"),
-		userAPI.CreateUser()).Methods("POST")
+		userAPI.CreateUser(),
+	).Methods("POST")
+
 	r.HandleFunc(
 		api.PrefixAPIPath("user/login"),
-		userAPI.Login(signingKey)).Methods("POST")
+		userAPI.Login(signingKey),
+	).Methods("POST")
+
+	r.HandleFunc(
+		api.PrefixAPIPath("user/{id:[0-9]+}/followers"),
+		api.GetIDMiddleware(api.GetClaimsMiddleware(signingKey, userAPI.FollowUser())),
+	).Methods("POST")
+
 	r.HandleFunc(
 		api.PrefixAPIPath("user/{id:[0-9]+}"),
-		api.GetIDMiddleware(userAPI.DeleteUser())).Methods("DELETE")
+		api.GetIDMiddleware(userAPI.DeleteUser()),
+	).Methods("DELETE")
 }
 
 func initPostRoutes(r *mux.Router, stores data.Stores) {
 	postAPI := api.NewPostAPI(stores, debug())
 	r.HandleFunc(
 		api.PrefixAPIPath("post/{id:[0-9]+}"),
-		api.GetIDMiddleware(postAPI.GetPost())).Methods("GET")
+		api.GetIDMiddleware(postAPI.GetPost()),
+	).Methods("GET")
+
 	r.HandleFunc(
 		api.PrefixAPIPath("post/new"),
-		api.GetClaimsMiddleware(signingKey, postAPI.CreatePost())).Methods("POST")
+		api.GetClaimsMiddleware(signingKey, postAPI.CreatePost()),
+	).Methods("POST")
 }
