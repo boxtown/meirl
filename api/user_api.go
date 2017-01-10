@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -9,6 +10,11 @@ import (
 
 	"github.com/boxtown/meirl/data"
 )
+
+var errBadUsername = errors.New("Username may only contain [0-9], [a-z], and [A-Z]")
+var errTakenUsername = errors.New("Username is taken")
+var errBadEmail = errors.New("Email must be of the format [example@example]")
+var errTakenEmail = errors.New("Email is taken")
 
 // UserAPI contains state information for executing
 // MeIRL User API route handlers
@@ -37,13 +43,14 @@ func (api UserAPI) CreateUser() http.HandlerFunc {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		valid, err := api.isCreateRequestValid(&u)
+		err = api.isCreateRequestValid(&u)
 		if err != nil {
-			writeError(err, w, api.debug)
-			return
-		}
-		if !valid {
-			w.WriteHeader(http.StatusBadRequest)
+			if isCustomError(err) {
+				fmt.Fprintf(w, err.Error())
+				w.WriteHeader(http.StatusBadRequest)
+			} else {
+				writeError(err, w, api.debug)
+			}
 			return
 		}
 		u.Password, err = api.auth.SecurePassword(u.Password)
@@ -221,32 +228,42 @@ func (api UserAPI) getStoredUser(user *data.User) (*data.User, error) {
 	return api.stores.GetByEmail(user.Email)
 }
 
-func (api UserAPI) isCreateRequestValid(user *data.User) (bool, error) {
+func (api UserAPI) isCreateRequestValid(user *data.User) error {
 	usernameRegex := regexp.MustCompile("^[0-9a-zA-Z_]+$")
 	emailRegex := regexp.MustCompile("^.+@.+$")
 	if !usernameRegex.MatchString(user.Username) {
-		return false, nil
+		return errBadUsername
 	}
 	if !emailRegex.MatchString(user.Email) {
-		return false, nil
+		return errBadEmail
 	}
-	errc := make(chan error, 2)
+	uc := make(chan error, 1)
+	ec := make(chan error, 1)
 	go func() {
 		_, err := api.stores.GetByUsername(user.Username)
-		errc <- err
+		uc <- err
 	}()
 	go func() {
 		_, err := api.stores.GetByEmail(user.Email)
-		errc <- err
+		ec <- err
 	}()
-	for i := 0; i < 2; i++ {
-		err := <-errc
-		if err != data.ErrNoEnt {
-			if err != nil {
-				return false, err
-			}
-			return false, nil
+	err := <-uc
+	if err != data.ErrNoEnt {
+		if err != nil {
+			return err
 		}
+		return errTakenUsername
 	}
-	return true, nil
+	err = <-ec
+	if err != data.ErrNoEnt {
+		if err != nil {
+			return err
+		}
+		return errTakenEmail
+	}
+	return nil
+}
+
+func isCustomError(err error) bool {
+	return err == errBadUsername || err == errBadEmail || err == errTakenUsername || err == errTakenEmail
 }
