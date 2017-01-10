@@ -46,8 +46,8 @@ func (api UserAPI) CreateUser() http.HandlerFunc {
 		err = api.isCreateRequestValid(&u)
 		if err != nil {
 			if isCustomError(err) {
-				fmt.Fprintf(w, err.Error())
 				w.WriteHeader(http.StatusBadRequest)
+				fmt.Fprintf(w, err.Error())
 			} else {
 				writeError(err, w, api.debug)
 			}
