@@ -78,10 +78,10 @@ type User struct {
 // Post is the data model for a MeIRL post
 type Post struct {
 	Mutable
-	AuthorID int64
-	Contents []byte
-	Keks     int
-	Nos      int
+	AuthorID int64  `json:"authorID"`
+	Contents []byte `json:"contents"`
+	Keks     int    `json:"keks"`
+	Nos      int    `json:"nos"`
 }
 
 type errCouldNotUnmarshalTime struct {
