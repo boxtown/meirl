@@ -32,6 +32,7 @@ var pgUser string
 var pgPass string
 var pgHost string
 var pgPort string
+var requestBodyMaxBytes int64
 
 const pgDBName = "meirldb"
 
@@ -40,6 +41,7 @@ func init() {
 	signingKey = loadSigningKey(appEnv)
 	pgUser, pgPass = loadPostgresCredentials(appEnv)
 	pgHost, pgPort = loadPostgresHostAndPort(appEnv)
+	flag.Int64Var(&requestBodyMaxBytes, "requestBodyMaxBytes", 5*(1<<20), "max request body bytes, defaults to 5mb")
 }
 
 func loadAppEnvironment() environment {
