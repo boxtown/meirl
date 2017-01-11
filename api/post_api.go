@@ -47,8 +47,9 @@ func (api PostAPI) CreatePost() http.HandlerFunc {
 			writeError(err, w, api.debug)
 			return
 		}
-		w.Header().Add("Location", fmt.Sprintf("/%s/post/%d", apiVersion, id))
 		w.WriteHeader(http.StatusCreated)
+		w.Header().Add("Location", fmt.Sprintf("/%s/post/%d", apiVersion, id))
+		writeJSON(IDResponse{ID: id}, w)
 	}
 }
 

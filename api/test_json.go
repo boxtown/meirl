@@ -34,6 +34,15 @@ func postToJSON(post *data.Post) (io.Reader, error) {
  * From JSON Helpers *
  * ***************** */
 
+func idResponseFromJSON(r io.Reader) (*IDResponse, error) {
+	var resp IDResponse
+	err := json.NewDecoder(r).Decode(&resp)
+	if err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 func userFromJSON(r io.Reader) (*data.User, error) {
 	var u data.User
 	err := json.NewDecoder(r).Decode(&u)

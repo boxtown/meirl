@@ -59,6 +59,15 @@ func TestCreateUser(t *testing.T) {
 		t.Errorf("Expected generated id as last path element in location %s", location)
 		t.Fail()
 	}
+	ir, err := idResponseFromJSON(w.Body)
+	if err != nil {
+		t.Error(err.Error())
+		t.Fail()
+	}
+	if ir.ID != 1 {
+		t.Error("Wrong id returned")
+		t.Fail()
+	}
 }
 
 func TestBadCreateUserJSON(t *testing.T) {
