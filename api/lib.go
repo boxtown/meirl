@@ -14,12 +14,15 @@ import (
 	"github.com/boxtown/meirl/data"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
+	"github.com/uber-go/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
 const (
 	apiVersion = "1.0"
 )
+
+var logger = zap.New(zap.NewTextEncoder())
 
 // PrefixAPIPath appends API-specific prefixes to the
 // given path
@@ -178,6 +181,7 @@ func writeJSON(body interface{}, w http.ResponseWriter) {
 func writeError(err error, w http.ResponseWriter, debug bool) {
 	w.WriteHeader(http.StatusServiceUnavailable)
 	if debug {
+		logger.Error(err.Error())
 		fmt.Fprintf(w, err.Error())
 	}
 }
