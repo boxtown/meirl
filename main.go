@@ -5,11 +5,9 @@ import (
 
 	graceful "gopkg.in/tylerb/graceful.v1"
 
-	"net/http"
-
+	"github.com/boxtown/meirl/api"
 	"github.com/boxtown/meirl/data"
 	"github.com/boxtown/meirl/data/postgres"
-	"github.com/rs/cors"
 )
 
 func main() {
@@ -25,22 +23,9 @@ func main() {
 		UserStore: userStore,
 		PostStore: postStore,
 	})
-	graceful.Run(":8080", 10*time.Second, limitBodySize(cors.Default().Handler(r), requestBodyMaxBytes))
-}
-
-type bodyLimiter struct {
-	h http.Handler
-	n int64
-}
-
-func (bl bodyLimiter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, bl.n)
-	bl.h.ServeHTTP(w, r)
-}
-
-func limitBodySize(handler http.Handler, n int64) http.Handler {
-	return &bodyLimiter{
-		h: handler,
-		n: n,
-	}
+	graceful.Run(":8080", 10*time.Second,
+		api.LimitBodySize(
+			api.CORS(r.ServeHTTP), requestBodyMaxBytes,
+		),
+	)
 }
